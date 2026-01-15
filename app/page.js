@@ -10,24 +10,72 @@ import {
   CheckCircle,
   ArrowRight,
   Sparkles,
+  AlertCircle,
 } from "lucide-react";
 
 export default function LandingPage() {
+  // ==========================================
+  // STATE MANAGEMENT
+  // ==========================================
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
 
-  const handleSubmit = () => {
-    if (email && email.includes("@")) {
-      console.log("Email submitted:", email);
-      setSubmitted(true);
-      setTimeout(() => {
-        setSubmitted(false);
+  // ==========================================
+  // EMAIL SUBMISSION HANDLER
+  // ✅ NOW CONNECTED TO BACKEND DATABASE
+  // ==========================================
+  const handleSubmit = async () => {
+    // Reset states
+    setError("");
+    setSubmitted(false);
+
+    // Validate email
+    if (!email || !email.includes("@")) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // ✅ SEND TO BACKEND API
+      const response = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // ✅ SUCCESS - Email saved to database!
+        setSubmitted(true);
         setEmail("");
-      }, 3000);
+
+        // Hide success message after 5 seconds
+        setTimeout(() => {
+          setSubmitted(false);
+        }, 5000);
+      } else {
+        // ❌ ERROR - Show error message
+        setError(data.error || "Something went wrong");
+      }
+    } catch (err) {
+      console.error("Submission error:", err);
+      setError("Failed to join waitlist. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
+  // ==========================================
+  // DYNAMIC STYLING CLASSES
+  // ==========================================
   const bgClass = darkMode ? "bg-gray-900" : "bg-gray-50";
   const textClass = darkMode ? "text-white" : "text-gray-900";
   const subtextClass = darkMode ? "text-gray-300" : "text-gray-600";
@@ -37,7 +85,9 @@ export default function LandingPage() {
     <div
       className={`min-h-screen ${bgClass} ${textClass} transition-colors duration-300`}
     >
-      {/* Navigation */}
+      {/* ========================================== */}
+      {/* NAVIGATION BAR */}
+      {/* ========================================== */}
       <nav className="fixed top-0 w-full z-50 backdrop-blur-md bg-opacity-80">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
@@ -59,7 +109,9 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero Section */}
+      {/* ========================================== */}
+      {/* HERO SECTION */}
+      {/* ========================================== */}
       <section className="pt-32 pb-20 px-6">
         <div className="max-w-6xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500 bg-opacity-20 rounded-full mb-6">
@@ -82,30 +134,48 @@ export default function LandingPage() {
             quality of your life—from within.
           </p>
 
-          {/* Email Capture */}
+          {/* ========================================== */}
+          {/* EMAIL CAPTURE FORM - Hero */}
+          {/* ✅ NOW SAVES TO DATABASE */}
+          {/* ========================================== */}
           <div className="max-w-md mx-auto mb-8">
             <div className="flex gap-2">
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleSubmit()}
+                onKeyPress={(e) =>
+                  e.key === "Enter" && !loading && handleSubmit()
+                }
                 placeholder="Enter your email"
+                disabled={loading}
                 className={`flex-1 px-6 py-4 rounded-xl ${cardClass} border-2 ${
                   darkMode ? "border-gray-700" : "border-gray-200"
-                } focus:border-emerald-400 focus:outline-none transition-colors`}
+                } focus:border-emerald-400 focus:outline-none transition-colors disabled:opacity-50`}
               />
               <button
                 onClick={handleSubmit}
-                className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200 flex items-center gap-2"
+                disabled={loading}
+                className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Join <ArrowRight className="w-4 h-4" />
+                {loading ? "Joining..." : "Join"}
+                {!loading && <ArrowRight className="w-4 h-4" />}
               </button>
             </div>
+
+            {/* SUCCESS MESSAGE */}
             {submitted && (
               <p className="mt-3 text-emerald-400 flex items-center justify-center gap-2">
                 <CheckCircle className="w-5 h-5" />
-                You're on the list!
+                You're on the list! Check your email soon.
+              </p>
+            )}
+
+            {/* ERROR MESSAGE */}
+            {error && (
+              <p className="mt-3 text-red-400 flex items-center justify-center gap-2">
+                <AlertCircle className="w-5 h-5" />
+                {error}
               </p>
             )}
           </div>
@@ -117,7 +187,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* ========================================== */}
+      {/* FEATURES SECTION */}
+      {/* ========================================== */}
       <section className="py-20 px-6">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
@@ -165,7 +237,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Mission Section */}
+      {/* ========================================== */}
+      {/* MISSION SECTION */}
+      {/* ========================================== */}
       <section className="py-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">Our Mission</h2>
@@ -179,7 +253,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* ========================================== */}
+      {/* CALL-TO-ACTION SECTION */}
+      {/* ========================================== */}
       <section className="py-20 px-6">
         <div
           className={`max-w-4xl mx-auto ${cardClass} rounded-3xl p-12 text-center shadow-2xl`}
@@ -196,26 +272,48 @@ export default function LandingPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleSubmit()}
+                onKeyPress={(e) =>
+                  e.key === "Enter" && !loading && handleSubmit()
+                }
                 placeholder="Your email address"
+                disabled={loading}
                 className={`flex-1 px-6 py-4 rounded-xl ${
                   darkMode ? "bg-gray-900" : "bg-gray-100"
                 } border-2 ${
                   darkMode ? "border-gray-700" : "border-gray-200"
-                } focus:border-emerald-400 focus:outline-none transition-colors`}
+                } focus:border-emerald-400 focus:outline-none transition-colors disabled:opacity-50`}
               />
               <button
                 onClick={handleSubmit}
-                className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200"
+                disabled={loading}
+                className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-xl font-semibold hover:shadow-lg hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Join Waitlist
+                {loading ? "Joining..." : "Join Waitlist"}
               </button>
             </div>
+
+            {/* SUCCESS MESSAGE */}
+            {submitted && (
+              <p className="mt-3 text-emerald-400 flex items-center justify-center gap-2">
+                <CheckCircle className="w-5 h-5" />
+                You're on the list!
+              </p>
+            )}
+
+            {/* ERROR MESSAGE */}
+            {error && (
+              <p className="mt-3 text-red-400 flex items-center justify-center gap-2">
+                <AlertCircle className="w-5 h-5" />
+                {error}
+              </p>
+            )}
           </div>
         </div>
       </section>
 
-      {/* Footer */}
+      {/* ========================================== */}
+      {/* FOOTER */}
+      {/* ========================================== */}
       <footer className="py-12 px-6 border-t border-gray-800">
         <div className="max-w-6xl mx-auto text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
@@ -236,6 +334,9 @@ export default function LandingPage() {
   );
 }
 
+// ==========================================
+// FEATURE CARD COMPONENT
+// ==========================================
 function FeatureCard({ icon, title, description, darkMode }) {
   const cardClass = darkMode
     ? "bg-gray-800 border-gray-700"
